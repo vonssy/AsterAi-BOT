@@ -170,12 +170,14 @@ class AsterAi:
                     response.raise_for_status()
                     return True
         except (Exception, ClientResponseError) as e:
-            return self.log(
+            self.log(
                 f"{Fore.CYAN+Style.BRIGHT}Status    :{Style.RESET_ALL}"
                 f"{Fore.RED+Style.BRIGHT} Connection Not 200 OK {Style.RESET_ALL}"
                 f"{Fore.MAGENTA+Style.BRIGHT}-{Style.RESET_ALL}"
                 f"{Fore.YELLOW+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
             )
+
+        return None
             
     async def rewards_statistic(self, token: str, proxy=None, retries=5):
         url = f"{self.BASE_API}/rewards/statistic"
@@ -194,12 +196,14 @@ class AsterAi:
                 if attempt < retries - 1:
                     await asyncio.sleep(5)
                     continue
-                return self.log(
+                self.log(
                     f"{Fore.CYAN+Style.BRIGHT}Error     :{Style.RESET_ALL}"
                     f"{Fore.RED+Style.BRIGHT} GET Earning Stats Failed {Style.RESET_ALL}"
                     f"{Fore.MAGENTA+Style.BRIGHT}-{Style.RESET_ALL}"
                     f"{Fore.YELLOW+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
                 )
+
+        return None
     
     async def task_lists(self, token: str, proxy=None, retries=5):
         url = f"{self.BASE_API}/tasks"
@@ -218,12 +222,14 @@ class AsterAi:
                 if attempt < retries - 1:
                     await asyncio.sleep(5)
                     continue
-                return self.log(
+                self.log(
                     f"{Fore.CYAN+Style.BRIGHT}Error     :{Style.RESET_ALL}"
                     f"{Fore.RED+Style.BRIGHT} GET Task Lists Failed {Style.RESET_ALL}"
                     f"{Fore.MAGENTA+Style.BRIGHT}-{Style.RESET_ALL}"
                     f"{Fore.YELLOW+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
                 )
+
+        return None
             
     async def verify_tasks(self, token: str, task_id: str, proxy=None, retries=5):
         url = f"{self.BASE_API}/user-tasks/verify/{task_id}"
@@ -243,12 +249,14 @@ class AsterAi:
                 if attempt < retries - 1:
                     await asyncio.sleep(5)
                     continue
-                return self.log(
+                self.log(
                     f"{Fore.CYAN+Style.BRIGHT}     > {Style.RESET_ALL}"
                     f"{Fore.RED+Style.BRIGHT} Verifying Tasks Failed {Style.RESET_ALL}"
                     f"{Fore.MAGENTA+Style.BRIGHT}-{Style.RESET_ALL}"
                     f"{Fore.YELLOW+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
                 )
+
+        return None
             
     async def claim_tasks(self, token: str, task_id: str, proxy=None, retries=5):
         url = f"{self.BASE_API}/user-tasks/claim/{task_id}"
@@ -276,12 +284,14 @@ class AsterAi:
                 if attempt < retries - 1:
                     await asyncio.sleep(5)
                     continue
-                return self.log(
+                self.log(
                     f"{Fore.CYAN+Style.BRIGHT}     > {Style.RESET_ALL}"
                     f"{Fore.RED+Style.BRIGHT} Not Completed {Style.RESET_ALL}"
                     f"{Fore.MAGENTA+Style.BRIGHT}-{Style.RESET_ALL}"
                     f"{Fore.YELLOW+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
                 )
+
+        return None
         
     async def process_check_connection(self, token: str, use_proxy: bool, rotate_proxy: bool):
         while True:
