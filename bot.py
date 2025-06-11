@@ -251,9 +251,9 @@ class AsterAi:
                     continue
                 self.log(
                     f"{Fore.CYAN+Style.BRIGHT}     > {Style.RESET_ALL}"
-                    f"{Fore.RED+Style.BRIGHT} Verifying Tasks Failed {Style.RESET_ALL}"
-                    f"{Fore.MAGENTA+Style.BRIGHT}-{Style.RESET_ALL}"
-                    f"{Fore.YELLOW+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
+                    f"{Fore.RED+Style.BRIGHT}Verifying Tasks Failed{Style.RESET_ALL}"
+                    f"{Fore.MAGENTA+Style.BRIGHT} - {Style.RESET_ALL}"
+                    f"{Fore.YELLOW+Style.BRIGHT}{str(e)}{Style.RESET_ALL}"
                 )
 
         return None
@@ -273,9 +273,9 @@ class AsterAi:
                         if response.status == 400:
                             self.log(
                                 f"{Fore.MAGENTA+Style.BRIGHT}     > {Style.RESET_ALL}"
-                                f"{Fore.YELLOW+Style.BRIGHT}Already Claimed{Style.RESET_ALL}                         "
-                                f"{Fore.MAGENTA+Style.BRIGHT} or {Style.RESET_ALL}                         "
-                                f"{Fore.RED+Style.BRIGHT}Not Completed{Style.RESET_ALL}                         "
+                                f"{Fore.YELLOW+Style.BRIGHT}Already Claimed{Style.RESET_ALL}"
+                                f"{Fore.MAGENTA+Style.BRIGHT} or {Style.RESET_ALL}"
+                                f"{Fore.RED+Style.BRIGHT}Not Completed{Style.RESET_ALL}"
                             )
                             return False
                         response.raise_for_status()
@@ -286,9 +286,9 @@ class AsterAi:
                     continue
                 self.log(
                     f"{Fore.CYAN+Style.BRIGHT}     > {Style.RESET_ALL}"
-                    f"{Fore.RED+Style.BRIGHT} Not Completed {Style.RESET_ALL}"
-                    f"{Fore.MAGENTA+Style.BRIGHT}-{Style.RESET_ALL}"
-                    f"{Fore.YELLOW+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
+                    f"{Fore.RED+Style.BRIGHT}Not Completed{Style.RESET_ALL}"
+                    f"{Fore.MAGENTA+Style.BRIGHT} - {Style.RESET_ALL}"
+                    f"{Fore.YELLOW+Style.BRIGHT}{str(e)}{Style.RESET_ALL}"
                 )
 
         return None
