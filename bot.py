@@ -1,14 +1,15 @@
 from aiohttp import (
     ClientResponseError,
     ClientSession,
-    ClientTimeout
+    ClientTimeout,
+    BasicAuth
 )
 from aiohttp_socks import ProxyConnector
 from fake_useragent import FakeUserAgent
 from datetime import datetime
 from bs4 import BeautifulSoup
 from colorama import *
-import asyncio, json, time, os, pytz, base64, random
+import asyncio, base64, random, json, time, re, os, pytz
 
 wib = pytz.timezone('Asia/Jakarta')
 
@@ -43,7 +44,7 @@ class AsterAi:
     def welcome(self):
         print(
             f"""
-        {Fore.GREEN + Style.BRIGHT}Auto Claim {Fore.BLUE + Style.BRIGHT}Aster AI - BOT
+        {Fore.GREEN + Style.BRIGHT}Aster AI {Fore.BLUE + Style.BRIGHT}Auto BOT
             """
             f"""
         {Fore.GREEN + Style.BRIGHT}Rey? {Fore.YELLOW + Style.BRIGHT}<INI WATERMARK>
@@ -60,7 +61,7 @@ class AsterAi:
         try:
             if use_proxy_choice == 1:
                 async with ClientSession(timeout=ClientTimeout(total=30)) as session:
-                    async with session.get("https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&proxy_format=protocolipport&format=text") as response:
+                    async with session.get("https://raw.githubusercontent.com/monosans/proxy-list/refs/heads/main/proxies/http.txt") as response:
                         response.raise_for_status()
                         content = await response.text()
                         with open(filename, 'w') as f:
@@ -92,22 +93,42 @@ class AsterAi:
             return proxies
         return f"http://{proxies}"
 
-    def get_next_proxy_for_account(self, token):
-        if token not in self.account_proxies:
+    def get_next_proxy_for_account(self, account):
+        if account not in self.account_proxies:
             if not self.proxies:
                 return None
             proxy = self.check_proxy_schemes(self.proxies[self.proxy_index])
-            self.account_proxies[token] = proxy
+            self.account_proxies[account] = proxy
             self.proxy_index = (self.proxy_index + 1) % len(self.proxies)
-        return self.account_proxies[token]
+        return self.account_proxies[account]
 
-    def rotate_proxy_for_account(self, token):
+    def rotate_proxy_for_account(self, account):
         if not self.proxies:
             return None
         proxy = self.check_proxy_schemes(self.proxies[self.proxy_index])
-        self.account_proxies[token] = proxy
+        self.account_proxies[account] = proxy
         self.proxy_index = (self.proxy_index + 1) % len(self.proxies)
         return proxy
+    
+    def build_proxy_config(self, proxy=None):
+        if not proxy:
+            return None, None, None
+
+        if proxy.startswith("socks"):
+            connector = ProxyConnector.from_url(proxy)
+            return connector, None, None
+
+        elif proxy.startswith("http"):
+            match = re.match(r"http://(.*?):(.*?)@(.*)", proxy)
+            if match:
+                username, password, host_port = match.groups()
+                clean_url = f"http://{host_port}"
+                auth = BasicAuth(username, password)
+                return None, clean_url, auth
+            else:
+                return None, proxy, None
+
+        raise Exception("Unsupported Proxy Type.")
     
     def decode_token(self, token: str):
         try:
@@ -162,11 +183,11 @@ class AsterAi:
 
         return choose, rotate
     
-    async def check_connection(self, proxy=None):
-        connector = ProxyConnector.from_url(proxy) if proxy else None
+    async def check_connection(self, proxy_url=None):
+        connector, proxy, proxy_auth = self.build_proxy_config(proxy_url)
         try:
             async with ClientSession(connector=connector, timeout=ClientTimeout(total=30)) as session:
-                async with session.get(url=self.BASE_API, headers={}) as response:
+                async with session.get(url="https://api.ipify.org?format=json", proxy=proxy, proxy_auth=proxy_auth) as response:
                     response.raise_for_status()
                     return True
         except (Exception, ClientResponseError) as e:
@@ -176,20 +197,20 @@ class AsterAi:
                 f"{Fore.MAGENTA+Style.BRIGHT}-{Style.RESET_ALL}"
                 f"{Fore.YELLOW+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
             )
-
+        
         return None
             
-    async def rewards_statistic(self, token: str, proxy=None, retries=5):
+    async def rewards_statistic(self, token: str, proxy_url=None, retries=5):
         url = f"{self.BASE_API}/rewards/statistic"
         headers = {
             **self.headers,
             "Authorization": f"Bearer {token}"
         }
         for attempt in range(retries):
-            connector = ProxyConnector.from_url(proxy) if proxy else None
+            connector, proxy, proxy_auth = self.build_proxy_config(proxy_url)
             try:
                 async with ClientSession(connector=connector, timeout=ClientTimeout(total=60)) as session:
-                    async with session.get(url=url, headers=headers) as response:
+                    async with session.get(url=url, headers=headers, proxy=proxy, proxy_auth=proxy_auth) as response:
                         response.raise_for_status()
                         return await response.json()
             except (Exception, ClientResponseError) as e:
@@ -197,25 +218,25 @@ class AsterAi:
                     await asyncio.sleep(5)
                     continue
                 self.log(
-                    f"{Fore.CYAN+Style.BRIGHT}Error     :{Style.RESET_ALL}"
-                    f"{Fore.RED+Style.BRIGHT} GET Earning Stats Failed {Style.RESET_ALL}"
+                    f"{Fore.CYAN+Style.BRIGHT}Balance   :{Style.RESET_ALL}"
+                    f"{Fore.RED+Style.BRIGHT} Fetch Points Failed {Style.RESET_ALL}"
                     f"{Fore.MAGENTA+Style.BRIGHT}-{Style.RESET_ALL}"
                     f"{Fore.YELLOW+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
                 )
 
         return None
     
-    async def task_lists(self, token: str, proxy=None, retries=5):
+    async def task_lists(self, token: str, proxy_url=None, retries=5):
         url = f"{self.BASE_API}/tasks"
         headers = {
             **self.headers,
             "Authorization": f"Bearer {token}"
         }
         for attempt in range(retries):
-            connector = ProxyConnector.from_url(proxy) if proxy else None
+            connector, proxy, proxy_auth = self.build_proxy_config(proxy_url)
             try:
                 async with ClientSession(connector=connector, timeout=ClientTimeout(total=60)) as session:
-                    async with session.get(url=url, headers=headers) as response:
+                    async with session.get(url=url, headers=headers, proxy=proxy, proxy_auth=proxy_auth) as response:
                         response.raise_for_status()
                         return await response.json()
             except (Exception, ClientResponseError) as e:
@@ -223,15 +244,15 @@ class AsterAi:
                     await asyncio.sleep(5)
                     continue
                 self.log(
-                    f"{Fore.CYAN+Style.BRIGHT}Error     :{Style.RESET_ALL}"
-                    f"{Fore.RED+Style.BRIGHT} GET Task Lists Failed {Style.RESET_ALL}"
+                    f"{Fore.CYAN+Style.BRIGHT}Task Lists:{Style.RESET_ALL}"
+                    f"{Fore.RED+Style.BRIGHT} Fetch Data Failed {Style.RESET_ALL}"
                     f"{Fore.MAGENTA+Style.BRIGHT}-{Style.RESET_ALL}"
                     f"{Fore.YELLOW+Style.BRIGHT} {str(e)} {Style.RESET_ALL}"
                 )
 
         return None
             
-    async def verify_tasks(self, token: str, task_id: str, proxy=None, retries=5):
+    async def verify_tasks(self, token: str, task_id: str, proxy_url=None, retries=5):
         url = f"{self.BASE_API}/user-tasks/verify/{task_id}"
         headers = {
             **self.headers,
@@ -239,10 +260,10 @@ class AsterAi:
             "Content-Length": "0"
         }
         for attempt in range(retries):
-            connector = ProxyConnector.from_url(proxy) if proxy else None
+            connector, proxy, proxy_auth = self.build_proxy_config(proxy_url)
             try:
                 async with ClientSession(connector=connector, timeout=ClientTimeout(total=60)) as session:
-                    async with session.post(url=url, headers=headers) as response:
+                    async with session.post(url=url, headers=headers, proxy=proxy, proxy_auth=proxy_auth) as response:
                         response.raise_for_status()
                         return await response.json()
             except (Exception, ClientResponseError) as e:
@@ -258,7 +279,7 @@ class AsterAi:
 
         return None
             
-    async def claim_tasks(self, token: str, task_id: str, proxy=None, retries=5):
+    async def claim_tasks(self, token: str, task_id: str, proxy_url=None, retries=5):
         url = f"{self.BASE_API}/user-tasks/claim/{task_id}"
         headers = {
             **self.headers,
@@ -266,10 +287,10 @@ class AsterAi:
             "Content-Length": "0"
         }
         for attempt in range(retries):
-            connector = ProxyConnector.from_url(proxy) if proxy else None
+            connector, proxy, proxy_auth = self.build_proxy_config(proxy_url)
             try:
                 async with ClientSession(connector=connector, timeout=ClientTimeout(total=60)) as session:
-                    async with session.post(url=url, headers=headers) as response:
+                    async with session.post(url=url, headers=headers, proxy=proxy, proxy_auth=proxy_auth) as response:
                         if response.status == 400:
                             self.log(
                                 f"{Fore.MAGENTA+Style.BRIGHT}     > {Style.RESET_ALL}"
@@ -296,22 +317,19 @@ class AsterAi:
     async def process_check_connection(self, token: str, use_proxy: bool, rotate_proxy: bool):
         while True:
             proxy = self.get_next_proxy_for_account(token) if use_proxy else None
-
             self.log(
                 f"{Fore.CYAN+Style.BRIGHT}Proxy     :{Style.RESET_ALL}"
                 f"{Fore.WHITE+Style.BRIGHT} {proxy} {Style.RESET_ALL}"
             )
 
             is_valid = await self.check_connection(proxy)
-            if is_valid:
-                return True
-            
-            if rotate_proxy:
-                proxy = self.rotate_proxy_for_account(token) if use_proxy else None
-                await asyncio.sleep(5)
+            if not is_valid:
+                if rotate_proxy:
+                    proxy = self.rotate_proxy_for_account(token)
+
                 continue
 
-            return False
+            return True
         
     async def process_accounts(self, token: str, use_proxy: bool, rotate_proxy: bool):
         is_valid = await self.process_check_connection(token, use_proxy, rotate_proxy)
